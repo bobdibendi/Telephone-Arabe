@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🎚️ Admin — VoiceChain</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=Syne+Mono&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #080810;
+  --surf: #0f0f1e;
+  --surf2: #16162a;
+  --accent: #7c3aed;
+  --accent2: #06b6d4;
+  --pink: #ec4899;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #f1f5f9;
+  --muted: #64748b;
+  --r: 16px;
+}
+html, body {
+  min-height: 100%; background: var(--bg);
+  color: var(--text); font-family: 'Space Grotesk', sans-serif;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0;
+  background-image: linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px), linear-gradient(90deg,rgba(124,58,237,0.03) 1px,transparent 1px);
+  background-size: 40px 40px; pointer-events: none;
+}
+body { display: flex; flex-direction: column; align-items: center; padding: 24px 16px 60px; gap: 16px; position: relative; z-index: 1; }
+
+/* HEADER */
+.header { text-align: center; margin-bottom: 8px; }
+.logo { font-family: 'Syne Mono', monospace; font-size: 2rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.logo-sub { font-size: 0.72rem; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 2px; }
+
+/* STATUS */
+#status-bar {
+  width: 100%; max-width: 760px;
+  background: var(--surf); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--r); padding: 16px 20px;
+  display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center;
+  position: relative; overflow: hidden;
+}
+#status-bar::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+}
+.stat { display: flex; align-items: center; gap: 8px; }
+.stat-label { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; }
+.stat-value { font-family: 'Syne Mono', monospace; font-size: 1.1rem; color: var(--accent2); }
+.phase-badge { background: rgba(6,182,212,0.12); color: var(--accent2); padding: 4px 14px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(6,182,212,0.25); }
+.phase-badge.playing { background: rgba(124,58,237,0.15); color: var(--accent); border-color: rgba(124,58,237,0.3); }
+.phase-badge.results { background: rgba(245,158,11,0.12); color: var(--yellow); border-color: rgba(245,158,11,0.3); }
+#refresh-btn { margin-left: auto; background: none; border: 1.5px solid rgba(255,255,255,0.08); color: var(--muted); border-radius: 10px; padding: 6px 14px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 0.8rem; transition: all 0.2s; }
+#refresh-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+/* GRID */
+.grid { width: 100%; max-width: 760px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:560px) { .grid { grid-template-columns: 1fr; } }
+
+/* CARD */
+.card {
+  background: var(--surf); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--r); padding: 20px;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative; overflow: hidden;
+}
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(124,58,237,0.4), transparent); }
+.card.wide { grid-column: 1 / -1; }
+.card h3 { font-size: 0.78rem; font-weight: 700; color: var(--accent2); text-transform: uppercase; letter-spacing: 2px; }
+
+/* INPUTS */
+input[type="text"], input[type="number"] {
+  background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 10px 14px; color: var(--text);
+  font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem; font-weight: 600;
+  outline: none; width: 100%; transition: border-color 0.2s, box-shadow 0.2s;
+}
+input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,0.12); }
+input::placeholder { color: var(--muted); font-weight: 400; }
+
+select {
+  background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 10px 14px; color: var(--text);
+  font-family: 'Space Grotesk', sans-serif; font-size: 0.9rem;
+  outline: none; width: 100%; transition: border-color 0.2s;
+}
+select:focus { border-color: var(--accent); }
+select option { background: #16162a; }
+
+/* BUTTONS */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 16px; border-radius: 11px;
+  font-family: 'Space Grotesk', sans-serif; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; border: none; width: 100%;
+  transition: transform 0.12s, opacity 0.15s; letter-spacing: 0.3px;
+}
+.btn:active { transform: scale(0.95); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-accent  { background: linear-gradient(135deg, var(--accent), #9333ea); color: white; box-shadow: 0 4px 16px rgba(124,58,237,0.35); }
+.btn-cyan    { background: linear-gradient(135deg, var(--accent2), #0891b2); color: white; box-shadow: 0 4px 16px rgba(6,182,212,0.3); }
+.btn-green   { background: linear-gradient(135deg, var(--green), #059669); color: white; box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
+.btn-yellow  { background: linear-gradient(135deg, var(--yellow), #d97706); color: #080810; box-shadow: 0 4px 16px rgba(245,158,11,0.3); }
+.btn-red     { background: linear-gradient(135deg, var(--red), #dc2626); color: white; box-shadow: 0 4px 16px rgba(239,68,68,0.3); }
+.btn-pink    { background: linear-gradient(135deg, var(--pink), #db2777); color: white; box-shadow: 0 4px 16px rgba(236,72,153,0.3); }
+.btn-ghost   { background: rgba(255,255,255,0.04); color: var(--muted); border: 1.5px solid rgba(255,255,255,0.08); }
+.btn-ghost:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn { flex: 1; }
+
+/* PLAYERS */
+#players-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.player-chip { display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.07); border-radius: 99px; padding: 6px 13px; font-size: 0.82rem; font-weight: 700; animation: chipIn 0.25s ease; }
+.player-chip.ready { border-color: var(--green); }
+@keyframes chipIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+.avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; }
+.kick-x { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; transition: color 0.2s; padding: 0 2px; }
+.kick-x:hover { color: var(--red); }
+
+/* EFFECT PILLS */
+.effect-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+@media(max-width:420px) { .effect-grid { grid-template-columns: repeat(3,1fr); } }
+.effect-btn {
+  padding: 9px 4px; font-size: 0.78rem; font-weight: 700;
+  border-radius: 10px; cursor: pointer; border: 1.5px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.04); color: var(--muted);
+  font-family: 'Space Grotesk', sans-serif;
+  transition: all 0.15s; text-align: center;
+}
+.effect-btn:hover { background: rgba(124,58,237,0.15); color: var(--text); border-color: var(--accent); }
+.effect-btn.active { background: rgba(124,58,237,0.25); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px rgba(124,58,237,0.2); }
+
+/* VOLUME SLIDER */
+input[type="range"] {
+  -webkit-appearance: none; width: 100%; height: 6px;
+  background: rgba(255,255,255,0.08); border-radius: 3px; outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; box-shadow: 0 0 8px rgba(124,58,237,0.5);
+}
+
+/* TROLL GRID */
+.troll-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+@media(max-width:400px) { .troll-grid { grid-template-columns: repeat(2,1fr); } }
+.troll-btn {
+  padding: 9px 4px; font-size: 0.8rem; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.04); color: var(--text);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  transition: all 0.15s; text-align: center;
+}
+.troll-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.04); }
+.troll-btn:active { transform: scale(0.93); }
+
+/* TARGET ROW */
+.target-row { display: flex; align-items: center; gap: 8px; }
+.target-row .label { font-size: 0.75rem; color: var(--muted); white-space: nowrap; text-transform: uppercase; letter-spacing: 1px; }
+
+/* LOG */
+#log-box {
+  background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px; padding: 10px 12px;
+  max-height: 130px; overflow-y: auto;
+  font-size: 0.75rem; color: var(--muted); font-family: 'Syne Mono', monospace;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.log-entry { color: var(--text); opacity: 0.6; }
+.log-entry.ok { color: var(--green); opacity: 1; }
+.log-entry.err { color: var(--red); opacity: 1; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+  background: var(--surf2); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px; padding: 10px 22px;
+  font-weight: 700; font-size: 0.88rem;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 999; pointer-events: none; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* MEDIA TAGS */
+.media-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.media-tag {
+  background: rgba(124,58,237,0.1); color: var(--accent);
+  border: 1px solid rgba(124,58,237,0.25); border-radius: 8px;
+  padding: 3px 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+  transition: background 0.15s;
+}
+.media-tag:hover { background: rgba(124,58,237,0.22); }
+
+/* EFFECT CURRENT */
+.effect-info { font-family: 'Syne Mono', monospace; font-size: 0.85rem; color: var(--accent2); text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">VOICE<span style="color:var(--accent2)">CHAIN</span> <span style="font-size:1rem;color:var(--muted)">admin</span></div>
+  <div class="logo-sub">Panel de contrôle</div>
+</div>
+
+<!-- STATUS -->
+<div id="status-bar">
+  <div class="stat">
+    <span class="stat-label">Phase</span>
+    <span id="s-phase" class="phase-badge">—</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Round</span>
+    <span id="s-round" class="stat-value">—</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Timer</span>
+    <span id="s-timer" class="stat-value">—s</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Joueurs</span>
+    <span id="s-players" class="stat-value">0</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Effet actif</span>
+    <span id="s-effect" class="stat-value" style="color:var(--pink)">—</span>
+  </div>
+  <button id="refresh-btn" onclick="loadState()">⟳ Refresh</button>
+</div>
+
+<div class="grid">
+
+  <!-- PARTIE -->
+  <div class="card">
+    <h3>🕹️ Partie</h3>
+    <button class="btn btn-green" onclick="api('start')">▶ Démarrer</button>
+    <div class="btn-row">
+      <button class="btn btn-yellow" onclick="api('skip')">⏭ Skip</button>
+      <button class="btn btn-accent" onclick="api('results')">🏆 Résultats</button>
+    </div>
+    <button class="btn btn-red" onclick="api('reset')">🔄 Reset lobby</button>
+  </div>
+
+  <!-- RÉGLAGES -->
+  <div class="card">
+    <h3>⚙️ Réglages</h3>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="number" id="inp-rounds" placeholder="Étapes/chaîne" min="2" max="10" style="flex:1">
+      <button class="btn btn-ghost" style="width:auto;padding:10px 14px" onclick="setRounds()">✓</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="number" id="inp-timer" placeholder="Timer (s)" min="10" max="120" style="flex:1">
+      <button class="btn btn-ghost" style="width:auto;padding:10px 14px" onclick="setTimer()">✓</button>
+    </div>
+    <div style="font-size:0.75rem;color:var(--muted)">
+      Rounds: <span id="cur-rounds" style="color:var(--accent2)">—</span> &nbsp;|&nbsp;
+      Timer: <span id="cur-timer" style="color:var(--accent2)">—</span>s
+    </div>
+  </div>
+
+  <!-- AUDIO EFFECT -->
+  <div class="card wide">
+    <h3>🎚️ Effet Audio (appliqué à chaque voix)</h3>
+    <div class="effect-grid" id="effect-grid">
+      <!-- injecté par JS -->
+    </div>
+    <div class="effect-info" id="effect-info">Effet actuel : <span id="cur-effect">—</span></div>
+  </div>
+
+  <!-- VOLUME -->
+  <div class="card wide">
+    <h3>🔊 Volume global</h3>
+    <input type="range" id="vol-slider" min="0" max="3" step="0.05" value="1" oninput="onVolSlider(this.value)">
+    <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">
+      <span>0 (muet)</span>
+      <span id="vol-display" style="color:var(--accent2);font-weight:700">1.0×</span>
+      <span>3× (boost)</span>
+    </div>
+    <button class="btn btn-cyan" onclick="applyVolume()">Appliquer le volume</button>
+  </div>
+
+  <!-- JOUEURS -->
+  <div class="card wide">
+    <h3>👥 Joueurs connectés</h3>
+    <div id="players-list"><span style="color:var(--muted);font-size:0.82rem">Chargement…</span></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="card">
+    <h3>💬 Message à tous</h3>
+    <input type="text" id="inp-chat" placeholder="Ton message…">
+    <button class="btn btn-accent" onclick="sendChat()">📢 Envoyer</button>
+  </div>
+
+  <!-- KICK -->
+  <div class="card">
+    <h3>👢 Kick</h3>
+    <div class="target-row">
+      <span class="label">Joueur</span>
+      <select id="sel-kick"><option value="">— choisir —</option></select>
+    </div>
+    <button class="btn btn-red" onclick="kick()">💀 Kick</button>
+  </div>
+
+  <!-- EFFETS VISUELS TROLL -->
+  <div class="card wide">
+    <h3>😈 Effets Visuels Troll</h3>
+    <div class="target-row" style="margin-bottom:6px">
+      <span class="label">Cible</span>
+      <select id="sel-troll"><option value="all">Tout le monde</option></select>
+    </div>
+    <div class="troll-grid">
+      <button class="troll-btn" onclick="troll('trollshake')">📳 Shake</button>
+      <button class="troll-btn" onclick="troll('trollblind')">🌑 Blind</button>
+      <button class="troll-btn" onclick="troll('trollzoom')">🔍 Zoom</button>
+      <button class="troll-btn" onclick="troll('trollflip')">🙃 Flip</button>
+      <button class="troll-btn" onclick="overlayClear()" style="border-color:rgba(6,182,212,0.3);color:var(--accent2)">✗ Clear</button>
+    </div>
+  </div>
+
+  <!-- TROLL TEXTE -->
+  <div class="card">
+    <h3>📢 Troll Texte</h3>
+    <div class="target-row">
+      <span class="label">Cible</span>
+      <select id="sel-ttext"><option value="all">Tout le monde</option></select>
+    </div>
+    <input type="text" id="inp-ttext" placeholder="T'as perdu !">
+    <button class="btn btn-pink" onclick="sendTrollText()">💬 Envoyer</button>
+  </div>
+
+  <!-- TROLL URL -->
+  <div class="card">
+    <h3>🌐 Troll URL</h3>
+    <div class="target-row">
+      <span class="label">Cible</span>
+      <select id="sel-turl"><option value="all">Tout le monde</option></select>
+    </div>
+    <select id="sel-urltype">
+      <option value="youtube">▶️ YouTube</option>
+      <option value="image">🖼 Image URL</option>
+      <option value="video">🎥 Vidéo URL</option>
+      <option value="sound">🔊 Son URL</option>
+    </select>
+    <input type="text" id="inp-url" placeholder="https://youtu.be/...">
+    <button class="btn btn-yellow" onclick="sendTrollUrl()">🚀 Envoyer URL</button>
+  </div>
+
+  <!-- MÉDIAS LOCAUX -->
+  <div class="card wide">
+    <h3>📁 Médias locaux (dossier public/media/)</h3>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Images</div>
+        <div id="media-images" class="media-list"><span style="color:var(--muted);font-size:0.8rem">—</span></div>
+      </div>
+      <div>
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Vidéos</div>
+        <div id="media-videos" class="media-list"><span style="color:var(--muted);font-size:0.8rem">—</span></div>
+      </div>
+      <div>
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Sons</div>
+        <div id="media-sounds" class="media-list"><span style="color:var(--muted);font-size:0.8rem">—</span></div>
+      </div>
+    </div>
+    <div class="target-row" style="margin-top:8px">
+      <span class="label">Cible</span>
+      <select id="sel-tmedia"><option value="all">Tout le monde</option></select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <select id="sel-mtype" style="flex:1">
+        <option value="image">🖼 Image</option>
+        <option value="video">🎥 Vidéo</option>
+        <option value="sound">🔊 Son</option>
+      </select>
+      <input type="text" id="inp-mfile" placeholder="nom ou index" style="flex:1">
+      <button class="btn btn-cyan" style="width:auto;padding:10px 14px;margin-top:0" onclick="sendLocalMedia()">🚀</button>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="card wide">
+    <h3>📋 Log</h3>
+    <div id="log-box"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const EFFECTS = [
+  { id: 'robot',     label: '🤖 Robot'     },
+  { id: 'telephone', label: '📞 Téléphone' },
+  { id: 'chipmunk',  label: '🐿️ Chipmunk'  },
+  { id: 'deep',      label: '👹 Deep'       },
+  { id: 'fast',      label: '⚡ Fast ×2'   },
+  { id: 'slow',      label: '🐌 Slow ×0.5' },
+  { id: 'echo',      label: '🌊 Écho'       },
+  { id: 'noise',     label: '📻 Bruit'      },
+  { id: 'reverse',   label: '↩️ Reverse'    },
+  { id: 'normal',    label: '✓ Normal'      },
+];
+
+const COLORS = ['#7c3aed','#06b6d4','#ec4899','#10b981','#f59e0b','#3b82f6','#ef4444','#8b5cf6'];
+let players = [];
+let currentEffect = 'robot';
+let currentVolume = 1.0;
+
+// ── UTILS ──────────────────────────────────────────────────────
+async function api(endpoint, body = {}) {
+  try {
+    const res = await fetch(`/api/admin/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.error) { logEntry('❌ ' + data.error, 'err'); toast('❌ ' + data.error); }
+    else { logEntry(`✅ /${endpoint}`); toast('✅ ' + endpoint); loadState(); }
+    return data;
+  } catch(e) {
+    logEntry('Erreur réseau: ' + e.message, 'err');
+    toast('❌ Erreur réseau');
+  }
+}
+
+function logEntry(msg, type = '') {
+  const box = document.getElementById('log-box');
+  const el = document.createElement('div');
+  el.className = 'log-entry ' + type;
+  const t = new Date().toLocaleTimeString('fr', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  el.textContent = `[${t}] ${msg}`;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function updateSelects() {
+  ['sel-kick','sel-troll','sel-ttext','sel-turl','sel-tmedia'].forEach(id => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = id === 'sel-kick'
+      ? '<option value="">— choisir —</option>'
+      : '<option value="all">Tout le monde</option>';
+    players.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.name; opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+    if (cur) sel.value = cur;
+  });
+}
+
+// ── STATE ──────────────────────────────────────────────────────
+async function loadState() {
+  try {
+    const res = await fetch('/api/admin/state');
+    const d = await res.json();
+
+    const ph = document.getElementById('s-phase');
+    ph.textContent = d.phase;
+    ph.className = 'phase-badge ' + (d.phase === 'playing' ? 'playing' : d.phase === 'results' ? 'results' : '');
+
+    document.getElementById('s-round').textContent = d.phase === 'playing' ? `${d.round} / ${d.totalRounds * d.players.length}` : '—';
+    document.getElementById('s-timer').textContent = d.timerDuration;
+    document.getElementById('s-players').textContent = d.players.length;
+    document.getElementById('s-effect').textContent = d.audioEffect;
+    document.getElementById('cur-rounds').textContent = d.totalRounds;
+    document.getElementById('cur-timer').textContent = d.timerDuration;
+
+    // Synchro effet
+    currentEffect = d.audioEffect;
+    currentVolume = d.audioVolume;
+    document.getElementById('cur-effect').textContent = currentEffect;
+    document.getElementById('vol-slider').value = currentVolume;
+    document.getElementById('vol-display').textContent = currentVolume.toFixed(2) + '×';
+    renderEffectGrid();
+
+    players = d.players;
+    renderPlayers(d.players);
+    updateSelects();
+  } catch(e) {
+    logEntry('Impossible de charger l\'état', 'err');
+  }
+}
+
+function renderPlayers(list) {
+  const el = document.getElementById('players-list');
+  if (!list.length) { el.innerHTML = '<span style="color:var(--muted);font-size:0.82rem">Aucun joueur</span>'; return; }
+  el.innerHTML = list.map((p, i) => {
+    const col = COLORS[i % COLORS.length];
+    return `<div class="player-chip ${p.ready ? 'ready' : ''}">
+      <div class="avatar" style="background:${col}22;color:${col}">${p.name.slice(0,2).toUpperCase()}</div>
+      <span>${p.name}</span>
+      ${p.ready ? '<span style="color:var(--green)">✓</span>' : ''}
+      <button class="kick-x" onclick="kickDirect('${p.name.replace(/'/g,"\\'")}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── EFFECT GRID ────────────────────────────────────────────────
+function renderEffectGrid() {
+  const grid = document.getElementById('effect-grid');
+  grid.innerHTML = EFFECTS.map(e => `
+    <button class="effect-btn ${e.id === currentEffect ? 'active' : ''}"
+      onclick="setEffect('${e.id}')">${e.label}</button>
+  `).join('');
+}
+
+function setEffect(id) {
+  currentEffect = id;
+  renderEffectGrid();
+  api('effect', { effect: id });
+}
+
+// ── VOLUME ─────────────────────────────────────────────────────
+function onVolSlider(v) {
+  currentVolume = parseFloat(v);
+  document.getElementById('vol-display').textContent = currentVolume.toFixed(2) + '×';
+}
+
+function applyVolume() {
+  api('volume', { value: currentVolume });
+}
+
+// ── ACTIONS ────────────────────────────────────────────────────
+function setRounds() {
+  const v = parseInt(document.getElementById('inp-rounds').value);
+  if (!v) return toast('Entre un nombre');
+  api('rounds', { value: v });
+}
+
+function setTimer() {
+  const v = parseInt(document.getElementById('inp-timer').value);
+  if (!v) return toast('Entre une durée');
+  api('timer', { value: v });
+}
+
+function sendChat() {
+  const t = document.getElementById('inp-chat').value.trim();
+  if (!t) return toast('Message vide');
+  api('chat', { text: t });
+  document.getElementById('inp-chat').value = '';
+}
+
+function kick() {
+  const t = document.getElementById('sel-kick').value;
+  if (!t) return toast('Choisis un joueur');
+  api('kick', { target: t });
+}
+
+function kickDirect(name) { api('kick', { target: name }); }
+
+function troll(endpoint) {
+  const target = document.getElementById('sel-troll').value || 'all';
+  api(endpoint, { target });
+}
+
+function overlayClear() {
+  const target = document.getElementById('sel-troll').value || 'all';
+  api('overlayclear', { target });
+}
+
+function sendTrollText() {
+  const target = document.getElementById('sel-ttext').value || 'all';
+  const text = document.getElementById('inp-ttext').value.trim();
+  if (!text) return toast('Texte vide');
+  api('overlaytext', { target, text });
+  document.getElementById('inp-ttext').value = '';
+}
+
+function sendTrollUrl() {
+  const target = document.getElementById('sel-turl').value || 'all';
+  const mediaType = document.getElementById('sel-urltype').value;
+  const url = document.getElementById('inp-url').value.trim();
+  if (!url) return toast('URL vide');
+  api('overlayurl', { target, mediaType, url });
+  document.getElementById('inp-url').value = '';
+}
+
+function sendLocalMedia() {
+  const target = document.getElementById('sel-tmedia').value || 'all';
+  const type = document.getElementById('sel-mtype').value;
+  const file = document.getElementById('inp-mfile').value.trim();
+  if (!file) return toast('Nom ou index requis');
+  // Construire l'URL locale
+  const url = `/media/${type}s/${file}`;
+  api('overlayurl', { target, mediaType: type, url });
+}
+
+// ── MEDIA LIST ─────────────────────────────────────────────────
+async function loadMedia() {
+  try {
+    const res = await fetch('/api/media');
+    const d = await res.json();
+    renderMediaList('media-images', d.images);
+    renderMediaList('media-videos', d.videos);
+    renderMediaList('media-sounds', d.sounds);
+  } catch(e) {}
+}
+
+function renderMediaList(elId, files) {
+  const el = document.getElementById(elId);
+  if (!files.length) { el.innerHTML = '<span style="color:var(--muted);font-size:0.78rem">Aucun</span>'; return; }
+  el.innerHTML = files.map((f, i) =>
+    `<span class="media-tag" title="index: ${i}" onclick="document.getElementById('inp-mfile').value='${f}'">[${i}] ${f}</span>`
+  ).join('');
+}
+
+// ── KEYBOARD ───────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'r') loadState();
+});
+document.getElementById('inp-chat').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+document.getElementById('inp-ttext').addEventListener('keydown', e => { if (e.key === 'Enter') sendTrollText(); });
+document.getElementById('inp-url').addEventListener('keydown', e => { if (e.key === 'Enter') sendTrollUrl(); });
+
+// ── INIT ───────────────────────────────────────────────────────
+renderEffectGrid();
+loadState();
+loadMedia();
+setInterval(loadState, 5000);
+logEntry('Admin VoiceChain chargé 🎙️');
+</script>
+</body>
+</html>
